@@ -2390,6 +2390,26 @@
         }
 
 
+        /* اتجاه الكتابة من اليمين إلى اليسار في تبويب الاشتراك فقط */
+        #subscription,
+        #subscription .content-header,
+        #subscription #subscriptionLoading,
+        #subscription #subscriptionContent,
+        #subscription .subscription-summary-card,
+        #subscription .subscription-summary-main,
+        #subscription .subscription-detail,
+        #subscription .subscription-pricing-reference,
+        #subscription .subscription-footnote,
+        #subscription .subscription-alert {
+            direction: rtl !important;
+            text-align: right !important;
+        }
+        #subscription .subscription-summary-card { flex-direction: row; }
+        #subscription .subscription-summary-icon { flex-shrink: 0; }
+        #subscription .subscription-details-grid,
+        #subscription .subscription-pricing-grid { direction: rtl; }
+        #subscription .subscription-price-card { direction: rtl; }
+
         /* بطاقة اشتراك StoreMaster */
         .subscription-state-card{background:#fff;border:1px solid var(--border);border-radius:16px;padding:24px;text-align:center;box-shadow:var(--shadow);color:var(--gray)}
         .subscription-summary-card{display:flex;align-items:center;gap:18px;padding:24px;border-radius:18px;background:linear-gradient(135deg,#1a1b2e,#3a0ca3);color:#fff;box-shadow:var(--shadow-lg);margin-bottom:20px}
