@@ -10158,7 +10158,7 @@ async function loadSubscriptionPanel(forceRefresh=false){
       const requestTask = (async () => {
         const res = await fetch(url, {
           method: 'GET',
-          headers: { 'Accept': 'application/json' },
+          headers: { 'Accept': 'application/json', 'Cache-Control': 'no-cache' },
           cache: 'no-store',
           signal: controller.signal
         });
@@ -10168,19 +10168,11 @@ async function loadSubscriptionPanel(forceRefresh=false){
         catch (_) { throw new Error('استجاب خادم التراخيص ببيانات غير صالحة. تحقق من نشر نسخة Worker الصحيحة.'); }
         return { res, parsed };
       })();
-      let hardTimeoutId;
-      const hardTimeout = new Promise((_, reject) => {
-        hardTimeoutId = setTimeout(() => {
-          try { controller.abort(); } catch (_) {}
-          reject(new Error('انتهت مهلة الاتصال بخادم التراخيص بعد 12 ثانية. تحقق من Worker وعنوان LICENSE_SERVER.'));
-        }, 12000);
-      });
-      let result;
-      try {
-        result = await Promise.race([requestTask, hardTimeout]);
-      } finally {
-        clearTimeout(hardTimeoutId);
-      }
+      const hardTimeout = new Promise((_, reject) => setTimeout(() => {
+        try { controller.abort(); } catch (_) {}
+        reject(new Error('انتهت مهلة الاتصال بخادم التراخيص بعد 12 ثانية. تحقق من Worker وعنوان LICENSE_SERVER.'));
+      }, 12000));
+      const result = await Promise.race([requestTask, hardTimeout]);
       response = result.res;
       data = result.parsed;
     } finally {
@@ -10230,6 +10222,10 @@ async function loadSubscriptionPanel(forceRefresh=false){
   }})();
   try{return await __smSubscriptionPromise;}finally{clearTimeout(__smLoadingWatchdog);__smSubscriptionPromise=null;}
 }
+
+// Expose the subscription loader: it is defined inside this IIFE, but the dashboard
+// initialization and switchTab handlers call it from outside this scope.
+window.loadSubscriptionPanel = loadSubscriptionPanel;
 
 function tabName(id){return ({'dashboard-home':'الرئيسية',dashboard:'الرئيسية',products:'المنتجات',delivery:'التوصيل',settings:'إعدادات المتجر',tools:'أدوات النظام',orders:'الطلبات',archive:'أرشيف الطلبات','checkout-analytics':'تحليل Checkout',about:'من نحن',subscription:'اشتراكي وصلاحية متجري'})[id]||id} 
 function escapeHtml(v){return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
