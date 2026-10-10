@@ -10094,6 +10094,14 @@ async function loadSubscriptionPanel(forceRefresh=false){
   const content=document.getElementById('subscriptionContent');
   const alertBox=document.getElementById('subscriptionAlert');
   const hostNow=String(location.hostname||'').trim().toLowerCase();
+  // Watchdog: even if the network/WebView ignores AbortController, never leave the spinner forever.
+  const __smLoadingWatchdog=setTimeout(()=>{
+    if(loading && loading.style.display!=='none' && /fa-spinner|جارٍ تحميل معلومات الاشتراك/.test(loading.innerHTML||'')){
+      loading.style.display='block';
+      loading.innerHTML='تعذّر الحصول على رد من خادم التراخيص خلال 18 ثانية. تحقق من نشر Worker وعنوان LICENSE_SERVER ثم أعد المحاولة. <button type="button" class="btn btn-primary" style="margin-right:10px" onclick="loadSubscriptionPanel(true)">إعادة المحاولة</button>';
+      if(content && !__smSubscriptionCache) content.style.display='none';
+    }
+  },18000);
   const renderCached=()=>{
     if(!__smSubscriptionCache)return false;
     // Re-render from the cached response without another HTTP request.
@@ -10199,7 +10207,7 @@ async function loadSubscriptionPanel(forceRefresh=false){
     }
     return null;
   }})();
-  try{return await __smSubscriptionPromise;}finally{__smSubscriptionPromise=null;}
+  try{return await __smSubscriptionPromise;}finally{clearTimeout(__smLoadingWatchdog);__smSubscriptionPromise=null;}
 }
 
 function tabName(id){return ({'dashboard-home':'الرئيسية',dashboard:'الرئيسية',products:'المنتجات',delivery:'التوصيل',settings:'إعدادات المتجر',tools:'أدوات النظام',orders:'الطلبات',archive:'أرشيف الطلبات','checkout-analytics':'تحليل Checkout',about:'من نحن',subscription:'اشتراكي وصلاحية متجري'})[id]||id} 
