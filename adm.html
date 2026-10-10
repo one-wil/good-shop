@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html>
 <html lang="ar">
 <head>
@@ -10141,11 +10140,24 @@ async function loadSubscriptionPanel(forceRefresh=false){
     const url=base+'/api/store/license-status?site='+encodeURIComponent(host);
     const controller=new AbortController();
     const timeout=setTimeout(()=>controller.abort(),12000);
-    let response;
-    try{response=await fetch(url,{method:'GET',headers:{'Accept':'application/json','Cache-Control':'no-cache'},cache:'no-store',signal:controller.signal});}
-    finally{clearTimeout(timeout);}
-    const data=await response.json().catch(()=>({}));
-    if(!response.ok||data.success!==true)throw new Error(data.error||('تعذر تحميل بيانات الاشتراك (HTTP '+response.status+').'));
+    let response, data;
+    // Keep the timeout active until BOTH the HTTP response and its JSON body are read.
+    // Previously the timer was cleared immediately after fetch(), so a stalled response
+    // body could leave the subscription tab on its spinner forever.
+    try {
+      response = await fetch(url, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json', 'Cache-Control': 'no-cache' },
+        cache: 'no-store',
+        signal: controller.signal
+      });
+      const raw = await response.text();
+      try { data = raw ? JSON.parse(raw) : {}; }
+      catch (_) { throw new Error('استجاب خادم التراخيص ببيانات غير صالحة. تحقق من نشر نسخة Worker الصحيحة.'); }
+    } finally {
+      clearTimeout(timeout);
+    }
+    if (!response.ok || data.success !== true) throw new Error(data.error || ('تعذر تحميل بيانات الاشتراك (HTTP ' + response.status + ').'));
     data.__host=host; __smSubscriptionCache=data; __smSubscriptionFetchedAt=Date.now();
     const planMap={'trial':'شهر تجريبي مجاني','3m':'3 أشهر','6m':'6 أشهر','12m':'12 شهرًا'};
     const priceMap={'trial':0,'3m':3000,'6m':5000,'12m':9000};
