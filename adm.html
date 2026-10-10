@@ -10158,7 +10158,7 @@ async function loadSubscriptionPanel(forceRefresh=false){
       const requestTask = (async () => {
         const res = await fetch(url, {
           method: 'GET',
-          headers: { 'Accept': 'application/json', 'Cache-Control': 'no-cache' },
+          headers: { 'Accept': 'application/json' },
           cache: 'no-store',
           signal: controller.signal
         });
@@ -10168,11 +10168,19 @@ async function loadSubscriptionPanel(forceRefresh=false){
         catch (_) { throw new Error('استجاب خادم التراخيص ببيانات غير صالحة. تحقق من نشر نسخة Worker الصحيحة.'); }
         return { res, parsed };
       })();
-      const hardTimeout = new Promise((_, reject) => setTimeout(() => {
-        try { controller.abort(); } catch (_) {}
-        reject(new Error('انتهت مهلة الاتصال بخادم التراخيص بعد 12 ثانية. تحقق من Worker وعنوان LICENSE_SERVER.'));
-      }, 12000));
-      const result = await Promise.race([requestTask, hardTimeout]);
+      let hardTimeoutId;
+      const hardTimeout = new Promise((_, reject) => {
+        hardTimeoutId = setTimeout(() => {
+          try { controller.abort(); } catch (_) {}
+          reject(new Error('انتهت مهلة الاتصال بخادم التراخيص بعد 12 ثانية. تحقق من Worker وعنوان LICENSE_SERVER.'));
+        }, 12000);
+      });
+      let result;
+      try {
+        result = await Promise.race([requestTask, hardTimeout]);
+      } finally {
+        clearTimeout(hardTimeoutId);
+      }
       response = result.res;
       data = result.parsed;
     } finally {
