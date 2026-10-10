@@ -10158,7 +10158,7 @@ async function loadSubscriptionPanel(forceRefresh=false){
       const requestTask = (async () => {
         const res = await fetch(url, {
           method: 'GET',
-          headers: { 'Accept': 'application/json', 'Cache-Control': 'no-cache' },
+          headers: { 'Accept': 'application/json' },
           cache: 'no-store',
           signal: controller.signal
         });
