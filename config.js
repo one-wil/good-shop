@@ -536,7 +536,7 @@ const STORE_CONFIG = {
     ]
   },
   "STORE_INFO": {
-    "name": "Meghili-shop",
+    "name": "Good-shop",
     "storeIcon": "-",
     "storeTitle": "-",
     "tagline": "متجر الجودة المفقودة ",
@@ -545,12 +545,13 @@ const STORE_CONFIG = {
       "0551102155"
     ],
     "logo": "https://raw.githubusercontent.com/one-wil/lip-waw/main/images/store-logo-1789242847980-file-0000000012a481f4b3f05ecbb28e82cd.png",
-    "facebookUrl": "",
-    "instagramUrl": "",
-    "messengerUrl": "",
+    "facebookUrl": ".",
+    "instagramUrl": ".",
+    "messengerUrl": ".",
     "telegramUrl": "https://t.me/Hdh",
     "whatsappNumber": "213671466489",
-    "whatsappUrl": "https://wa.me/213671466489"
+    "whatsappUrl": "https://wa.me/213671466489",
+    "tiktokUrl": "."
   },
   "AVAILABLE_COLORS": [
     "أبيض",
