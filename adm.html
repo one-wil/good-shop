@@ -10096,7 +10096,7 @@ async function loadSubscriptionPanel(forceRefresh=false){
   const hostNow=String(location.hostname||'').trim().toLowerCase();
   // Watchdog: even if the network/WebView ignores AbortController, never leave the spinner forever.
   const __smLoadingWatchdog=setTimeout(()=>{
-    if(loading && loading.style.display!=='none' && /fa-spinner|جارٍ تحميل معلومات الاشتراك/.test(loading.innerHTML||'')){
+    if(loading && loading.style.display!=='none' && /fa-spinner|جارٍ تحميل معلومات الاشتراك|تعذّر الحصول على رد/.test(loading.innerHTML||'')){
       loading.style.display='block';
       loading.innerHTML='تعذّر الحصول على رد من خادم التراخيص خلال 18 ثانية. تحقق من نشر Worker وعنوان LICENSE_SERVER ثم أعد المحاولة. <button type="button" class="btn btn-primary" style="margin-right:10px" onclick="loadSubscriptionPanel(true)">إعادة المحاولة</button>';
       if(content && !__smSubscriptionCache) content.style.display='none';
@@ -10153,15 +10153,28 @@ async function loadSubscriptionPanel(forceRefresh=false){
     // Previously the timer was cleared immediately after fetch(), so a stalled response
     // body could leave the subscription tab on its spinner forever.
     try {
-      response = await fetch(url, {
-        method: 'GET',
-        headers: { 'Accept': 'application/json', 'Cache-Control': 'no-cache' },
-        cache: 'no-store',
-        signal: controller.signal
-      });
-      const raw = await response.text();
-      try { data = raw ? JSON.parse(raw) : {}; }
-      catch (_) { throw new Error('استجاب خادم التراخيص ببيانات غير صالحة. تحقق من نشر نسخة Worker الصحيحة.'); }
+      // Race the full request AND body read against a hard timeout. Some mobile
+      // WebViews can leave fetch()/response.text() pending even after abort().
+      const requestTask = (async () => {
+        const res = await fetch(url, {
+          method: 'GET',
+          headers: { 'Accept': 'application/json', 'Cache-Control': 'no-cache' },
+          cache: 'no-store',
+          signal: controller.signal
+        });
+        const raw = await res.text();
+        let parsed;
+        try { parsed = raw ? JSON.parse(raw) : {}; }
+        catch (_) { throw new Error('استجاب خادم التراخيص ببيانات غير صالحة. تحقق من نشر نسخة Worker الصحيحة.'); }
+        return { res, parsed };
+      })();
+      const hardTimeout = new Promise((_, reject) => setTimeout(() => {
+        try { controller.abort(); } catch (_) {}
+        reject(new Error('انتهت مهلة الاتصال بخادم التراخيص بعد 12 ثانية. تحقق من Worker وعنوان LICENSE_SERVER.'));
+      }, 12000));
+      const result = await Promise.race([requestTask, hardTimeout]);
+      response = result.res;
+      data = result.parsed;
     } finally {
       clearTimeout(timeout);
     }
